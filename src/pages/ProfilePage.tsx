@@ -16,7 +16,8 @@ import {
   Hash,
   Camera,
   X,
-  Save
+  Save,
+  AlertCircle
 } from 'lucide-react';
 import EditProfileModal from '../components/Profile/EditProfileModal';
 
