@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase, Database } from '../lib/supabase';
 import { 
@@ -21,22 +21,30 @@ import {
 import EditProfileModal from '../components/Profile/EditProfileModal';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
+type Job = Database['public']['Tables']['jobs']['Row'];
 
 const ProfilePage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [showEditModal, setShowEditModal] = useState(false);
   const [activeTab, setActiveTab] = useState('about');
+  const [userJobs, setUserJobs] = useState<Job[]>([]);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [jobToDelete, setJobToDelete] = useState<string | null>(null);
 
   const isOwnProfile = user?.id === id;
 
   useEffect(() => {
     if (id) {
       fetchProfile();
+      if (isOwnProfile) {
+        fetchUserJobs();
+      }
     }
-  }, [id]);
+  }, [id, isOwnProfile]);
 
   const fetchProfile = async () => {
     if (!id) return;

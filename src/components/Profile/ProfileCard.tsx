@@ -89,15 +89,13 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ profile, isCurrentUser = fals
         </div>
       )}
 
-      {onViewProfile && (
-        <button
-          onClick={() => navigate(`/profile/${profile.id}`)}
-          className="w-full bg-gray-50 text-gray-700 py-2 px-4 rounded-lg text-sm font-medium hover:bg-gray-100 transition-all flex items-center justify-center space-x-2"
-        >
-          <span>View Profile</span>
-          <ExternalLink className="h-4 w-4" />
-        </button>
-      )}
+      <button
+        onClick={() => navigate(`/profile/${profile.id}`)}
+        className="w-full bg-gray-50 text-gray-700 py-2 px-4 rounded-lg text-sm font-medium hover:bg-gray-100 transition-all flex items-center justify-center space-x-2"
+      >
+        <span>View Profile</span>
+        <ExternalLink className="h-4 w-4" />
+      </button>
     </div>
   );
 };

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase, Database } from '../lib/supabase';
 import { Users, Briefcase, Calendar, TrendingUp, Plus } from 'lucide-react';
@@ -9,6 +10,7 @@ type Job = Database['public']['Tables']['jobs']['Row'];
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [recentAlumni, setRecentAlumni] = useState<Profile[]>([]);
   const [recentJobs, setRecentJobs] = useState<Job[]>([]);
@@ -166,7 +168,11 @@ const Dashboard: React.FC = () => {
           {recentAlumni.length > 0 ? (
             <div className="space-y-4">
               {recentAlumni.slice(0, 3).map((alumnus) => (
-                <div key={alumnus.id} className="flex items-center space-x-4 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                <button
+                  key={alumnus.id}
+                  onClick={() => navigate(`/profile/${alumnus.id}`)}
+                  className="w-full flex items-center space-x-4 p-3 rounded-lg hover:bg-gray-50 transition-colors text-left"
+                >
                   <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-medium text-sm">
                     {alumnus.first_name.charAt(0)}{alumnus.last_name.charAt(0)}
                   </div>
@@ -178,7 +184,7 @@ const Dashboard: React.FC = () => {
                       {alumnus.degree} • Class of {alumnus.graduation_year}
                     </p>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           ) : (
