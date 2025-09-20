@@ -11,7 +11,6 @@ import Dashboard from './pages/Dashboard';
 import DirectoryPage from './pages/DirectoryPage';
 import JobsPage from './pages/JobsPage';
 import ProfilePage from './pages/ProfilePage';
-import ProfilePage from './pages/ProfilePage';
 
 // Protected Route Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
