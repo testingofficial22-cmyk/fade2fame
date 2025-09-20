@@ -70,6 +70,28 @@ const ProfilePage: React.FC = () => {
     }
   };
 
+  const fetchUserJobs = async () => {
+    if (!id) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('jobs')
+        .select('*')
+        .eq('posted_by', id)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching user jobs:', error);
+        return;
+      }
+
+      setUserJobs(data || []);
+    } catch (error) {
+      console.error('Error fetching user jobs:', error);
+    }
+  };
+
   const handleProfileUpdate = (updatedProfile: Profile) => {
     setProfile(updatedProfile);
     setShowEditModal(false);
