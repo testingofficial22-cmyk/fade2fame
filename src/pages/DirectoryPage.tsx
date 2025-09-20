@@ -149,6 +149,7 @@ const DirectoryPage: React.FC = () => {
               key={profile.id}
               profile={profile}
               isCurrentUser={profile.id === user?.id}
+              onViewProfile={() => {}}
             />
           ))}
         </div>

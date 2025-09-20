@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { MapPin, Briefcase, GraduationCap, Calendar, Mail, Phone, ExternalLink } from 'lucide-react';
 import { Database } from '../../lib/supabase';
 
@@ -12,6 +13,7 @@ interface ProfileCardProps {
 }
 
 const ProfileCard: React.FC<ProfileCardProps> = ({ profile, isCurrentUser = false, onViewProfile }) => {
+  const navigate = useNavigate();
   const navigate = useNavigate();
   const fullName = `${profile.first_name} ${profile.last_name}`;
   const graduationYear = profile.graduation_year;
