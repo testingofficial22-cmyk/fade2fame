@@ -149,10 +149,6 @@ const DirectoryPage: React.FC = () => {
               key={profile.id}
               profile={profile}
               isCurrentUser={profile.id === user?.id}
-              onViewProfile={() => {
-                // Navigate to profile page
-                window.location.href = `/profile/${profile.id}`;
-              }}
             />
           ))}
         </div>
