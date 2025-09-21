@@ -262,7 +262,6 @@ const ProfilePage: React.FC = () => {
     { id: 'academic', label: 'Academic', icon: GraduationCap },
     { id: 'professional', label: 'Professional', icon: Briefcase },
     { id: 'achievements', label: 'Achievements', icon: Award },
-    ...(isOwnProfile ? [{ id: 'connections', label: 'Connections', icon: Users }] : []),
   ];
 
   return (
