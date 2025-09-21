@@ -164,6 +164,72 @@ const ProfilePage: React.FC = () => {
     }
   };
 
+  const handleConnectionRequest = async () => {
+    if (!user || !id || connectionLoading) return;
+
+    setConnectionLoading(true);
+    try {
+      if (connectionStatus === 'none') {
+        // Send connection request
+        const { error } = await supabase
+          .from('connections')
+          .insert({
+            requester_id: user.id,
+            addressee_id: id,
+            status: 'pending'
+          });
+
+        if (error) {
+          console.error('Error sending connection request:', error);
+          return;
+        }
+
+        setConnectionStatus('sent');
+      } else if (connectionStatus === 'pending') {
+        // Accept connection request
+        const { error } = await supabase
+          .from('connections')
+          .update({ status: 'accepted' })
+          .eq('requester_id', id)
+          .eq('addressee_id', user.id);
+
+        if (error) {
+          console.error('Error accepting connection request:', error);
+          return;
+        }
+
+        setConnectionStatus('accepted');
+      }
+    } catch (error) {
+      console.error('Error handling connection request:', error);
+    } finally {
+      setConnectionLoading(false);
+    }
+  };
+
+  const handleRemoveConnection = async () => {
+    if (!user || !id || connectionLoading) return;
+
+    setConnectionLoading(true);
+    try {
+      const { error } = await supabase
+        .from('connections')
+        .delete()
+        .or(`and(requester_id.eq.${user.id},addressee_id.eq.${id}),and(requester_id.eq.${id},addressee_id.eq.${user.id})`);
+
+      if (error) {
+        console.error('Error removing connection:', error);
+        return;
+      }
+
+      setConnectionStatus('none');
+    } catch (error) {
+      console.error('Error removing connection:', error);
+    } finally {
+      setConnectionLoading(false);
+    }
+  };
+
   const handleProfileUpdate = (updatedProfile: Profile) => {
     setProfile(updatedProfile);
     setShowEditModal(false);
@@ -196,6 +262,7 @@ const ProfilePage: React.FC = () => {
     { id: 'academic', label: 'Academic', icon: GraduationCap },
     { id: 'professional', label: 'Professional', icon: Briefcase },
     { id: 'achievements', label: 'Achievements', icon: Award },
+    ...(isOwnProfile ? [{ id: 'connections', label: 'Connections', icon: Users }] : []),
   ];
 
   return (
@@ -240,6 +307,63 @@ const ProfilePage: React.FC = () => {
                 <Edit className="h-4 w-4" />
                 <span>Edit Profile</span>
               </button>
+            </div>
+          )}
+
+          {/* Connection/Message Buttons */}
+          {!isOwnProfile && user && (
+            <div className="absolute top-4 right-4 flex space-x-2">
+              {connectionStatus === 'accepted' && (
+                <>
+                  <button
+                    onClick={() => navigate('/messages')}
+                    className="bg-white/90 backdrop-blur-sm text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-white transition-all flex items-center space-x-2"
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                    <span>Message</span>
+                  </button>
+                  <button
+                    onClick={handleRemoveConnection}
+                    disabled={connectionLoading}
+                    className="bg-red-500/90 backdrop-blur-sm text-white px-4 py-2 rounded-lg font-medium hover:bg-red-600 transition-all flex items-center space-x-2"
+                  >
+                    <UserX className="h-4 w-4" />
+                    <span>Remove</span>
+                  </button>
+                </>
+              )}
+              
+              {connectionStatus === 'none' && (
+                <button
+                  onClick={handleConnectionRequest}
+                  disabled={connectionLoading}
+                  className="bg-blue-600/90 backdrop-blur-sm text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-all flex items-center space-x-2"
+                >
+                  <UserPlus className="h-4 w-4" />
+                  <span>{connectionLoading ? 'Connecting...' : 'Connect'}</span>
+                </button>
+              )}
+              
+              {connectionStatus === 'sent' && (
+                <button
+                  disabled
+                  className="bg-gray-400/90 backdrop-blur-sm text-white px-4 py-2 rounded-lg font-medium flex items-center space-x-2"
+                >
+                  <UserCheck className="h-4 w-4" />
+                  <span>Request Sent</span>
+                </button>
+              )}
+              
+              {connectionStatus === 'pending' && (
+                <button
+                  onClick={handleConnectionRequest}
+                  disabled={connectionLoading}
+                  className="bg-green-600/90 backdrop-blur-sm text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 transition-all flex items-center space-x-2"
+                >
+                  <UserCheck className="h-4 w-4" />
+                  <span>{connectionLoading ? 'Accepting...' : 'Accept Request'}</span>
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -497,6 +621,58 @@ const ProfilePage: React.FC = () => {
              (!profile.skills || profile.skills.length === 0) &&
              (!profile.hobbies || profile.hobbies.length === 0) && (
               <p className="text-gray-600 italic">No achievements, skills, or hobbies added yet.</p>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'connections' && isOwnProfile && (
+          <div className="space-y-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">My Connections</h3>
+            
+            {connections.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {connections.map((connection) => {
+                  const partner = connection.requester_id === user?.id 
+                    ? (connection as any).addressee 
+                    : (connection as any).requester;
+                  
+                  return (
+                    <div key={connection.id} className="bg-gray-50 rounded-lg p-4 flex items-center space-x-4">
+                      <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-semibold">
+                        {partner.first_name.charAt(0)}{partner.last_name.charAt(0)}
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-medium text-gray-900">
+                          {partner.first_name} {partner.last_name}
+                        </h4>
+                        <p className="text-sm text-gray-600 flex items-center">
+                          <Calendar className="h-3 w-3 mr-1" />
+                          Connected since {new Date(connection.created_at).toLocaleDateString('en-US', { 
+                            month: 'long', 
+                            year: 'numeric' 
+                          })}
+                        </p>
+                      </div>
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => navigate('/messages')}
+                          className="text-blue-600 hover:text-blue-700 p-2 rounded-lg hover:bg-blue-50 transition-colors"
+                        >
+                          <MessageCircle className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <Users className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                <h4 className="text-lg font-semibold text-gray-900 mb-2">No Connections Yet</h4>
+                <p className="text-gray-600">
+                  Start connecting with fellow alumni to build your network!
+                </p>
+              </div>
             )}
           </div>
         )}
