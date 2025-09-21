@@ -85,6 +85,63 @@ const ProfilePage: React.FC = () => {
     }
   };
 
+  const checkConnectionStatus = async () => {
+    if (!user || !id) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('connections')
+        .select('*')
+        .or(`and(requester_id.eq.${user.id},addressee_id.eq.${id}),and(requester_id.eq.${id},addressee_id.eq.${user.id})`)
+        .maybeSingle();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error checking connection status:', error);
+        return;
+      }
+
+      if (data) {
+        if (data.status === 'accepted') {
+          setConnectionStatus('accepted');
+        } else if (data.requester_id === user.id) {
+          setConnectionStatus('sent');
+        } else {
+          setConnectionStatus('pending');
+        }
+      } else {
+        setConnectionStatus('none');
+      }
+    } catch (error) {
+      console.error('Error checking connection status:', error);
+    }
+  };
+
+  const fetchConnections = async () => {
+    if (!id) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('connections')
+        .select(`
+          *,
+          requester:requester_id (first_name, last_name, photo_url),
+          addressee:addressee_id (first_name, last_name, photo_url)
+        `)
+        .eq('status', 'accepted')
+        .or(`requester_id.eq.${id},addressee_id.eq.${id}`)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching connections:', error);
+        return;
+      }
+
+      setConnections(data || []);
+    } catch (error) {
+      console.error('Error fetching connections:', error);
+    }
+  };
+
   const fetchUserJobs = async () => {
     if (!id) return;
 
@@ -107,12 +164,70 @@ const ProfilePage: React.FC = () => {
     }
   };
 
-  const checkConnectionStatus = async () => {
-    // Implementation for checking connection status
+  const handleConnectionRequest = async () => {
+    if (!user || !id || connectionLoading) return;
+
+    setConnectionLoading(true);
+    try {
+      if (connectionStatus === 'none') {
+        // Send connection request
+        const { error } = await supabase
+          .from('connections')
+          .insert({
+            requester_id: user.id,
+            addressee_id: id,
+            status: 'pending'
+          });
+
+        if (error) {
+          console.error('Error sending connection request:', error);
+          return;
+        }
+
+        setConnectionStatus('sent');
+      } else if (connectionStatus === 'pending') {
+        // Accept connection request
+        const { error } = await supabase
+          .from('connections')
+          .update({ status: 'accepted' })
+          .eq('requester_id', id)
+          .eq('addressee_id', user.id);
+
+        if (error) {
+          console.error('Error accepting connection request:', error);
+          return;
+        }
+
+        setConnectionStatus('accepted');
+      }
+    } catch (error) {
+      console.error('Error handling connection request:', error);
+    } finally {
+      setConnectionLoading(false);
+    }
   };
 
-  const fetchConnections = async () => {
-    // Implementation for fetching connections
+  const handleRemoveConnection = async () => {
+    if (!user || !id || connectionLoading) return;
+
+    setConnectionLoading(true);
+    try {
+      const { error } = await supabase
+        .from('connections')
+        .delete()
+        .or(`and(requester_id.eq.${user.id},addressee_id.eq.${id}),and(requester_id.eq.${id},addressee_id.eq.${user.id})`);
+
+      if (error) {
+        console.error('Error removing connection:', error);
+        return;
+      }
+
+      setConnectionStatus('none');
+    } catch (error) {
+      console.error('Error removing connection:', error);
+    } finally {
+      setConnectionLoading(false);
+    }
   };
 
   const handleProfileUpdate = (updatedProfile: Profile) => {
@@ -147,6 +262,7 @@ const ProfilePage: React.FC = () => {
     { id: 'academic', label: 'Academic', icon: GraduationCap },
     { id: 'professional', label: 'Professional', icon: Briefcase },
     { id: 'achievements', label: 'Achievements', icon: Award },
+    ...(isOwnProfile ? [{ id: 'connections', label: 'Connections', icon: Users }] : []),
   ];
 
   return (
