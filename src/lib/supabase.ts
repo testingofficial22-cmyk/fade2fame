@@ -146,6 +146,44 @@ export type Database = {
           updated_at?: string;
         };
       };
+      connections: {
+        Row: {
+          id: string;
+          requester_id: string;
+          addressee_id: string;
+          status: 'pending' | 'accepted' | 'rejected';
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          requester_id: string;
+          addressee_id: string;
+          status?: 'pending' | 'accepted' | 'rejected';
+        };
+        Update: {
+          status?: 'pending' | 'accepted' | 'rejected';
+          updated_at?: string;
+        };
+      };
+      messages: {
+        Row: {
+          id: string;
+          connection_id: string;
+          sender_id: string;
+          content: string;
+          is_read: boolean;
+          created_at: string;
+        };
+        Insert: {
+          connection_id: string;
+          sender_id: string;
+          content: string;
+          is_read?: boolean;
+        };
+        Update: {
+          is_read?: boolean;
+        };
+      };
     };
   };
 };

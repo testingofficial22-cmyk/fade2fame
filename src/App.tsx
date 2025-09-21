@@ -11,6 +11,7 @@ import Dashboard from './pages/Dashboard';
 import DirectoryPage from './pages/DirectoryPage';
 import JobsPage from './pages/JobsPage';
 import ProfilePage from './pages/ProfilePage';
+import MessagesPage from './pages/MessagesPage';
 
 // Protected Route Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -78,6 +79,11 @@ function App() {
           <Route path="/jobs" element={
             <ProtectedRoute>
               <JobsPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/messages" element={
+            <ProtectedRoute>
+              <MessagesPage />
             </ProtectedRoute>
           } />
           <Route path="/profile/:id" element={

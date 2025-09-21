@@ -10,7 +10,8 @@ import {
   LogOut, 
   Menu, 
   X,
-  GraduationCap
+  GraduationCap,
+  MessageCircle
 } from 'lucide-react';
 
 const Navigation: React.FC = () => {
@@ -28,6 +29,7 @@ const Navigation: React.FC = () => {
     { name: 'Dashboard', href: '/dashboard', icon: Home },
     { name: 'Directory', href: '/directory', icon: Users },
     { name: 'Jobs', href: '/jobs', icon: Briefcase },
+    { name: 'Messages', href: '/messages', icon: MessageCircle },
   ];
 
   const isActive = (path: string) => location.pathname === path;
