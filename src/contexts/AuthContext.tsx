@@ -1,11 +1,13 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
+import { authService } from '../lib/auth';
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  getValidToken: () => Promise<string | null>;
   signUp: (email: string, password: string, firstName: string, lastName: string) => Promise<any>;
   signUp: (email: string, password: string, firstName: string, lastName: string, role: 'student' | 'alumni', additionalData: any) => Promise<any>;
   signIn: (email: string, password: string) => Promise<any>;
@@ -111,10 +113,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   };
 
+  const getValidToken = async () => {
+    return await authService.getValidToken();
+  };
   const value = {
     user,
     session,
     loading,
+    getValidToken,
     signUp,
     signIn,
     signOut,

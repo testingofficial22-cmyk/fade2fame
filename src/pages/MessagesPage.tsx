@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { supabase, Database } from '../lib/supabase';
+import { Database } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { messagingService } from '../lib/messaging';
 import { MessageCircle, Send, Users, Clock, Check, CheckCheck } from 'lucide-react';
 
 type Connection = Database['public']['Tables']['connections']['Row'] & {
@@ -18,6 +19,7 @@ const MessagesPage: React.FC = () => {
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string>('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -41,25 +43,18 @@ const MessagesPage: React.FC = () => {
     if (!user) return;
 
     try {
-      const { data, error } = await supabase
-        .from('connections')
-        .select(`
-          *,
-          requester:requester_id (first_name, last_name, photo_url),
-          addressee:addressee_id (first_name, last_name, photo_url)
-        `)
-        .eq('status', 'accepted')
-        .or(`requester_id.eq.${user.id},addressee_id.eq.${user.id}`)
-        .order('updated_at', { ascending: false });
+      const result = await messagingService.fetchConnections();
 
-      if (error) {
-        console.error('Error fetching connections:', error);
+      if (!result.success) {
+        setError(result.error || 'Failed to fetch connections');
         return;
       }
 
-      setConnections(data || []);
+      setConnections(result.data || []);
+      setError('');
     } catch (error) {
       console.error('Error fetching connections:', error);
+      setError('An unexpected error occurred');
     } finally {
       setLoading(false);
     }
@@ -69,20 +64,18 @@ const MessagesPage: React.FC = () => {
     if (!selectedConnection) return;
 
     try {
-      const { data, error } = await supabase
-        .from('messages')
-        .select('*')
-        .eq('connection_id', selectedConnection.id)
-        .order('created_at', { ascending: true });
+      const result = await messagingService.fetchMessages(selectedConnection.id);
 
-      if (error) {
-        console.error('Error fetching messages:', error);
+      if (!result.success) {
+        setError(result.error || 'Failed to fetch messages');
         return;
       }
 
-      setMessages(data || []);
+      setMessages(result.data || []);
+      setError('');
     } catch (error) {
       console.error('Error fetching messages:', error);
+      setError('An unexpected error occurred');
     }
   };
 
@@ -90,12 +83,11 @@ const MessagesPage: React.FC = () => {
     if (!selectedConnection || !user) return;
 
     try {
-      await supabase
-        .from('messages')
-        .update({ is_read: true })
-        .eq('connection_id', selectedConnection.id)
-        .neq('sender_id', user.id)
-        .eq('is_read', false);
+      const result = await messagingService.markMessagesAsRead(selectedConnection.id);
+      
+      if (!result.success) {
+        console.error('Failed to mark messages as read:', result.error);
+      }
     } catch (error) {
       console.error('Error marking messages as read:', error);
     }
@@ -106,17 +98,13 @@ const MessagesPage: React.FC = () => {
     if (!newMessage.trim() || !selectedConnection || !user || sending) return;
 
     setSending(true);
+    setError('');
+    
     try {
-      const { error } = await supabase
-        .from('messages')
-        .insert({
-          connection_id: selectedConnection.id,
-          sender_id: user.id,
-          content: newMessage.trim()
-        });
+      const result = await messagingService.sendMessage(selectedConnection.id, newMessage.trim());
 
-      if (error) {
-        console.error('Error sending message:', error);
+      if (!result.success) {
+        setError(result.error || 'Failed to send message');
         return;
       }
 
@@ -124,6 +112,7 @@ const MessagesPage: React.FC = () => {
       fetchMessages();
     } catch (error) {
       console.error('Error sending message:', error);
+      setError('An unexpected error occurred while sending message');
     } finally {
       setSending(false);
     }
@@ -154,6 +143,19 @@ const MessagesPage: React.FC = () => {
 
   return (
     <div className="h-[calc(100vh-8rem)] flex bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      {/* Error Display */}
+      {error && (
+        <div className="absolute top-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded z-50">
+          <span className="block sm:inline">{error}</span>
+          <button
+            onClick={() => setError('')}
+            className="ml-2 text-red-700 hover:text-red-900"
+          >
+            ×
+          </button>
+        </div>
+      )}
+      
       {/* Connections Sidebar */}
       <div className="w-1/3 border-r border-gray-200 flex flex-col">
         <div className="p-6 border-b border-gray-200">
