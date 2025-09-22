@@ -193,13 +193,6 @@ const ProfilePage: React.FC = () => {
     if (!user?.id || !id) return;
 
     try {
-      // Validate authentication before making connection request
-      const token = await authService.getValidToken();
-      if (!token) {
-        console.error('Authentication required to send connection request');
-        return;
-      }
-
       const { error } = await supabase
         .from('connections')
         .insert({
@@ -219,13 +212,6 @@ const ProfilePage: React.FC = () => {
     if (!user?.id || !id) return;
 
     try {
-      // Validate authentication before accepting connection
-      const token = await authService.getValidToken();
-      if (!token) {
-        console.error('Authentication required to accept connection');
-        return;
-      }
-
       const { error } = await supabase
         .from('connections')
         .update({ status: 'accepted' })
@@ -243,13 +229,6 @@ const ProfilePage: React.FC = () => {
     if (!user?.id || !id) return;
 
     try {
-      // Validate authentication before removing connection
-      const token = await authService.getValidToken();
-      if (!token) {
-        console.error('Authentication required to remove connection');
-        return;
-      }
-
       const { error } = await supabase
         .from('connections')
         .delete()
@@ -268,13 +247,6 @@ const ProfilePage: React.FC = () => {
 
   const handleDeleteJob = async (jobId: string) => {
     try {
-      // Validate authentication before deleting job
-      const token = await authService.getValidToken();
-      if (!token) {
-        console.error('Authentication required to delete job');
-        return;
-      }
-
       const { error } = await supabase
         .from('jobs')
         .update({ is_active: false })

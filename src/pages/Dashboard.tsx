@@ -47,6 +47,7 @@ const Dashboard: React.FC = () => {
         .from('profiles')
         .select('*')
         .eq('hidden_from_search', false)
+        .neq('id', user.id) // Exclude current user
         .order('created_at', { ascending: false })
         .limit(6);
 
@@ -57,7 +58,10 @@ const Dashboard: React.FC = () => {
       // Fetch recent jobs
       const { data: jobsData } = await supabase
         .from('jobs')
-        .select('*')
+        .select(`
+          *,
+          profiles:posted_by(first_name, last_name)
+        `)
         .eq('is_active', true)
         .order('created_at', { ascending: false })
         .limit(5);

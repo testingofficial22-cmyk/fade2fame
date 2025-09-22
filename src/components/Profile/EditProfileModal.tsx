@@ -7,12 +7,12 @@ type Profile = Database['public']['Tables']['profiles']['Row'];
 interface EditProfileModalProps {
   profile: Profile;
   onClose: () => void;
-  onSave: (updatedProfile: Profile) => void;
+  onUpdate: (updatedProfile: Profile) => void;
 }
 
-const EditProfileModal: React.FC<EditProfileModalProps> = ({ profile, onClose, onSave }) => {
+const EditProfileModal: React.FC<EditProfileModalProps> = ({ profile, onClose, onUpdate }) => {
   const [activeTab, setActiveTab] = useState('personal');
-  const [loading, setSaving] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     first_name: profile.first_name,
     last_name: profile.last_name,
@@ -50,7 +50,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ profile, onClose, o
   };
 
   const handleSave = async () => {
-    setSaving(true);
+    setLoading(true);
     try {
       const updateData: any = {
         first_name: formData.first_name,
@@ -93,11 +93,11 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ profile, onClose, o
         return;
       }
 
-      onSave(data);
+      onUpdate(data);
     } catch (error) {
       console.error('Error updating profile:', error);
     } finally {
-      setSaving(false);
+      setLoading(false);
     }
   };
 

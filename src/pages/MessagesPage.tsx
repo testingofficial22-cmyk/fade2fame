@@ -43,14 +43,24 @@ const MessagesPage: React.FC = () => {
     if (!user) return;
 
     try {
-      const result = await messagingService.fetchConnections();
+      const { data, error } = await supabase
+        .from('connections')
+        .select(`
+          *,
+          requester:profiles!connections_requester_id_fkey(first_name, last_name, photo_url),
+          addressee:profiles!connections_addressee_id_fkey(first_name, last_name, photo_url)
+        `)
+        .eq('status', 'accepted')
+        .or(`requester_id.eq.${user.id},addressee_id.eq.${user.id}`)
+        .order('updated_at', { ascending: false });
 
-      if (!result.success) {
-        setError(result.error || 'Failed to fetch connections');
+      if (error) {
+        setError('Failed to fetch connections');
+        console.error('Error fetching connections:', error);
         return;
       }
 
-      setConnections(result.data || []);
+      setConnections(data || []);
       setError('');
     } catch (error) {
       console.error('Error fetching connections:', error);
@@ -64,14 +74,19 @@ const MessagesPage: React.FC = () => {
     if (!selectedConnection) return;
 
     try {
-      const result = await messagingService.fetchMessages(selectedConnection.id);
+      const { data, error } = await supabase
+        .from('messages')
+        .select('*')
+        .eq('connection_id', selectedConnection.id)
+        .order('created_at', { ascending: true });
 
-      if (!result.success) {
-        setError(result.error || 'Failed to fetch messages');
+      if (error) {
+        setError('Failed to fetch messages');
+        console.error('Error fetching messages:', error);
         return;
       }
 
-      setMessages(result.data || []);
+      setMessages(data || []);
       setError('');
     } catch (error) {
       console.error('Error fetching messages:', error);
@@ -83,10 +98,15 @@ const MessagesPage: React.FC = () => {
     if (!selectedConnection || !user) return;
 
     try {
-      const result = await messagingService.markMessagesAsRead(selectedConnection.id);
-      
-      if (!result.success) {
-        console.error('Failed to mark messages as read:', result.error);
+      const { error } = await supabase
+        .from('messages')
+        .update({ is_read: true })
+        .eq('connection_id', selectedConnection.id)
+        .neq('sender_id', user.id)
+        .eq('is_read', false);
+
+      if (error) {
+        console.error('Failed to mark messages as read:', error);
       }
     } catch (error) {
       console.error('Error marking messages as read:', error);
@@ -101,10 +121,18 @@ const MessagesPage: React.FC = () => {
     setError('');
     
     try {
-      const result = await messagingService.sendMessage(selectedConnection.id, newMessage.trim());
+      const { error } = await supabase
+        .from('messages')
+        .insert({
+          connection_id: selectedConnection.id,
+          sender_id: user.id,
+          content: newMessage.trim(),
+          is_read: false
+        });
 
-      if (!result.success) {
-        setError(result.error || 'Failed to send message');
+      if (error) {
+        setError('Failed to send message');
+        console.error('Error sending message:', error);
         return;
       }
 
@@ -145,7 +173,7 @@ const MessagesPage: React.FC = () => {
     <div className="h-[calc(100vh-8rem)] flex bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
       {/* Error Display */}
       {error && (
-        <div className="absolute top-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded z-50">
+        <div className="absolute top-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg z-50 max-w-md">
           <span className="block sm:inline">{error}</span>
           <button
             onClick={() => setError('')}

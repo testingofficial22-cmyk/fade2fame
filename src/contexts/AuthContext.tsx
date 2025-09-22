@@ -49,7 +49,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const signUp = async (email: string, password: string, firstName: string, lastName: string, role: 'student' | 'alumni', additionalData: any) => {
-    const { data, error } = await supabase.auth.signUp({
+    try {
+      const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -60,7 +61,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       },
     });
 
-    if (data.user && !error) {
+      if (error) throw error;
+      
+      if (data.user) {
       // Create initial profile
       const profileData: any = {
         id: data.user.id,
@@ -92,11 +95,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { error: profileError } = await supabase.from('profiles').insert(profileData);
 
       if (profileError) {
-        console.error('Error creating profile:', profileError);
+          throw profileError;
       }
     }
 
     return { data, error };
+    } catch (error) {
+      console.error('Sign up error:', error);
+      return { data: null, error };
+    }
   };
 
   const signIn = (email: string, password: string) => {

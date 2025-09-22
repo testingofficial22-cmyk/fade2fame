@@ -34,7 +34,8 @@ const DirectoryPage: React.FC = () => {
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('hidden_from_search', false);
+        .eq('hidden_from_search', false)
+        .neq('id', user?.id || ''); // Exclude current user from directory
 
       if (error) {
         console.error('Error fetching profiles:', error);
