@@ -147,7 +147,7 @@ const ProfilePage: React.FC = () => {
         .from('connections')
         .select('*')
         .or(`and(requester_id.eq.${user.id},addressee_id.eq.${id}),and(requester_id.eq.${id},addressee_id.eq.${user.id})`)
-        .single();
+        .maybeSingle();
 
       if (error && error.code !== 'PGRST116') throw error;
       
